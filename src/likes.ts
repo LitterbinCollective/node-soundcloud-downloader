@@ -22,8 +22,8 @@ export interface GetLikesOptions {
 /** @internal */
 export const getLikes = async (options: GetLikesOptions, clientID: string, axiosInstance: AxiosInstance): Promise<PaginatedQuery<Like>> => {
   let u = ''
+  options.limit = options.limit || -1
   if (!options.nextHref) {
-    if (!options.limit) options.limit = -1
     if (!options.offset) options.offset = 0
     u = appendURL(
       `https://api-v2.soundcloud.com/users/${options.id}/likes`,
@@ -40,13 +40,12 @@ export const getLikes = async (options: GetLikesOptions, clientID: string, axios
   // If options.limit > 0, query each page of likes until we have collected
   // `options.limit` liked tracks.
   // If options.limit === -1, query every page of likes
-  options.limit = options.limit || -1;
   while (nextHref && (options.limit > 0 || options.limit === -1)) {
     const { data } = await axiosInstance.get(u)
 
     const query = data as PaginatedQuery<Like>
     if (!query.collection) throw new Error('Invalid JSON response received')
-    if (query.collection.length === 0) return data
+    if (query.collection.length === 0) return response as PaginatedQuery<Like>
 
     if (query.collection[0].kind !== 'like') throw kindMismatchError('like', query.collection[0].kind)
 
