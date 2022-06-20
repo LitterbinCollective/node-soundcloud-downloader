@@ -34,12 +34,13 @@ export const getLikes = async (options: GetLikesOptions, clientID: string, axios
     u = appendURL(options.nextHref, 'client_id', clientID)
   }
 
-  let response: PaginatedQuery<Like>
+  let response: PaginatedQuery<Like> | false = false
   let nextHref = 'start'
 
   // If options.limit > 0, query each page of likes until we have collected
   // `options.limit` liked tracks.
   // If options.limit === -1, query every page of likes
+  options.limit = options.limit || -1;
   while (nextHref && (options.limit > 0 || options.limit === -1)) {
     const { data } = await axiosInstance.get(u)
 
@@ -50,7 +51,7 @@ export const getLikes = async (options: GetLikesOptions, clientID: string, axios
     if (query.collection[0].kind !== 'like') throw kindMismatchError('like', query.collection[0].kind)
 
     // Only add tracks (for now)
-    query.collection = query.collection.reduce((prev, curr) => curr.track ? prev.concat(curr) : prev, [])
+    query.collection = query.collection.reduce((prev, curr) => curr.track ? prev.concat(curr) : prev, [] as Like[])
     if (!response) {
       response = query
     } else {
@@ -76,5 +77,5 @@ export const getLikes = async (options: GetLikesOptions, clientID: string, axios
     }
   }
 
-  return response
+  return response as PaginatedQuery<Like>
 }

@@ -21,6 +21,8 @@ import { getUser } from './user'
 /** @internal */
 const downloadFormat = async (url: string, clientID: string, format: FORMATS, axiosInstance: AxiosInstance) => {
   const info = await getInfo(url, clientID, axiosInstance)
+  if (!info.media)
+    throw new Error('No media found for this track');
   const filtered = filterMedia(info.media.transcodings, { format: format })
   if (filtered.length === 0) throw new Error(`Could not find media with specified format: (${format})`)
   return await fromMediaObj(filtered[0], clientID, axiosInstance)
@@ -48,13 +50,13 @@ export interface SCDLOptions {
 }
 
 export class SCDL {
-  STREAMING_PROTOCOLS: { [key: string]: STREAMING_PROTOCOLS }
-  FORMATS: { [key: string]: FORMATS }
+  STREAMING_PROTOCOLS!: { [key: string]: STREAMING_PROTOCOLS }
+  FORMATS!: { [key: string]: FORMATS }
 
   private _clientID?: string
   private _filePath?: string
 
-  axios: AxiosInstance
+  axios!: AxiosInstance
   saveClientID = process.env.SAVE_CLIENT_ID ? process.env.SAVE_CLIENT_ID.toLowerCase() === 'true' : false
 
   stripMobilePrefix: boolean
@@ -244,7 +246,7 @@ export class SCDL {
       await this.setClientID()
     }
 
-    return this._clientID
+    return this._clientID as string
   }
 
   /** @internal */
@@ -271,7 +273,7 @@ export class SCDL {
         }
       }
 
-      return this._clientID
+      return this._clientID as string
     }
 
     this._clientID = clientID
@@ -284,11 +286,11 @@ export class SCDL {
     return new Promise((resolve, reject) => {
       if (!fs.existsSync(filename)) return resolve('')
 
-      fs.readFile(filename, 'utf8', (err: NodeJS.ErrnoException, data: string) => {
+      fs.readFile(filename, (err: NodeJS.ErrnoException | null, data: Buffer) => {
         if (err) return reject(err)
         let c: ClientIDData
         try {
-          c = JSON.parse(data)
+          c = JSON.parse(data.toString('utf8'))
         } catch (err) {
           return reject(err)
         }
@@ -319,7 +321,12 @@ export class SCDL {
   async prepareURL (url: string): Promise<string> {
     if (this.stripMobilePrefix) url = stripMobilePrefix(url)
     if (this.convertFirebaseLinks) {
-      if (isFirebaseURL(url)) url = await convertFirebaseURL(url, this.axios)
+      if (isFirebaseURL(url)) {
+        const result = await convertFirebaseURL(url, this.axios);
+        if (!result)
+          throw new Error('Failed to convert Firebase URL.');
+        url = result;
+      }
     }
 
     return url

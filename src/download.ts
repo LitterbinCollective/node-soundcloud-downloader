@@ -1,7 +1,7 @@
 /** @internal @packageDocumentation */
 
-import { AxiosInstance } from 'axios'
-import m3u8stream from 'm3u8stream'
+import axios, { AxiosInstance } from 'axios'
+import m3u8stream from 'm3u8stream/dist/index'
 import { handleRequestErrs, appendURL } from './util'
 import getInfo, { Transcoding } from './info'
 
@@ -49,7 +49,10 @@ export const fromURLBase: fromURLFunctionBase = async (url: string, clientID: st
 
     return getHLSStreamFunction(mediaUrl)
   } catch (err) {
-    throw handleRequestErrs(err)
+    if (axios.isAxiosError(err))
+      throw handleRequestErrs(err)
+    else
+      throw err
   }
 }
 
@@ -88,6 +91,8 @@ export const download = async (url: string, clientID: string, axiosInstance: Axi
     }
   }
 
+  if (!info.media)
+    throw new Error('No media found for this track');
   return await fromMediaObj(info.media.transcodings[0], clientID, axiosInstance)
 }
 

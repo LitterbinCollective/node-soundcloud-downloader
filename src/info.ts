@@ -1,5 +1,5 @@
 /* eslint-disable camelcase */
-import { AxiosInstance } from 'axios'
+import axios, { AxiosInstance, AxiosError } from 'axios'
 import { handleRequestErrs, appendURL, extractIDFromPersonalizedTrackURL } from './util'
 
 import STREAMING_PROTOCOLS from './protocols'
@@ -126,7 +126,10 @@ const getTrackInfoBase = async (clientID: string, axiosRef: AxiosInstance, ids: 
 
     return data as TrackInfo[]
   } catch (err) {
-    throw handleRequestErrs(err)
+    if (axios.isAxiosError(err))
+      throw handleRequestErrs(err)
+    else
+      throw err
   }
 }
 
@@ -139,7 +142,10 @@ export const getInfoBase = async <T extends TrackInfo | SetInfo>(url: string, cl
 
     return res.data as T
   } catch (err) {
-    throw handleRequestErrs(err)
+    if (axios.isAxiosError(err))
+      throw handleRequestErrs(err)
+    else
+      throw err
   }
 }
 
@@ -157,7 +163,7 @@ const getSetInfoBase = async (url: string, clientID: string, axiosRef: AxiosInst
 
   const ids = incompleteTracks.map(t => t.id)
   if (ids.length > 50) {
-    const splitIds = []
+    const splitIds: number[][] = []
     for (let x = 0; x <= Math.floor(ids.length / 50); x++) {
       splitIds.push([])
     }

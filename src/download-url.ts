@@ -1,7 +1,7 @@
 /** @internal @packageDocumentation */
 
-import { AxiosInstance } from 'axios'
-import m3u8stream from 'm3u8stream'
+import axios, { AxiosInstance } from 'axios'
+import m3u8stream from 'm3u8stream/dist/index'
 import { handleRequestErrs, appendURL } from './util'
 
 const fromURL = async (url: string, clientID: string, axiosInstance: AxiosInstance): Promise<any | m3u8stream.Stream> => {
@@ -27,7 +27,10 @@ const fromURL = async (url: string, clientID: string, axiosInstance: AxiosInstan
 
     return m3u8stream(res.data.url)
   } catch (err) {
-    throw handleRequestErrs(err)
+    if (axios.isAxiosError(err))
+      throw handleRequestErrs(err)
+    else
+      throw err
   }
 }
 
