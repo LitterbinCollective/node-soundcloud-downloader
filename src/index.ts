@@ -257,7 +257,7 @@ export class SCDL {
           const filename = path.resolve(__dirname, this._filePath ? this._filePath : '../client_id.json')
           const c = await this._getClientIDFromFile(filename)
           if (!c) {
-            this._clientID = await sckey.fetchKey()
+            this._clientID = await sckey.fetchKey(this.axios.defaults.httpsAgent);
             const data = {
               clientID: this._clientID,
               date: new Date().toISOString()
@@ -269,7 +269,7 @@ export class SCDL {
             this._clientID = c
           }
         } else {
-          this._clientID = await sckey.fetchKey()
+          this._clientID = await sckey.fetchKey(this.axios.defaults.httpsAgent)
         }
       }
 
